@@ -23,16 +23,6 @@ func TestNewPool(t *testing.T) {
 
 	_, err = NewPool(
 		1,
-		func() {
-			time.Sleep(time.Second)
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = NewPool(
-		1,
 		nil,
 	)
 	if err != newPoolRunFuncIsNil {
