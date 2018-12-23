@@ -273,7 +273,7 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			expectRunningCount,
 			func() {
 
-				time.Sleep(time.Second)
+				time.Sleep(time.Millisecond)
 
 			},
 		)
@@ -286,7 +286,7 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		for p.GetNowRunningCount() != p.GetExpectRunningCount() {
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond)
 		}
 
 		//
@@ -299,7 +299,7 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		for p.GetNowRunningCount() != p.GetExpectRunningCount() {
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond)
 		}
 
 		//
@@ -312,7 +312,7 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		for p.GetNowRunningCount() != p.GetExpectRunningCount() {
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond)
 		}
 
 	}

@@ -1,9 +1,7 @@
 package pool
 
 import (
-	"container/list"
 	"errors"
-	"log"
 	"sync"
 	"time"
 )
@@ -18,10 +16,10 @@ type pool struct {
 	nowRunningCountMutex sync.Mutex
 	detectExpectDuration time.Duration
 
-	containerStatusList      *list.List
-	containerStatusListMutex sync.Mutex
+	containerPrepareNext      chan *bool
+	containerPrepareNextMutex sync.Mutex
 
-	reviseContainerRunningCountMutex sync.Mutex
+	reviseContainerRunningCountAsExpectCountMutex sync.Mutex
 
 	runFunc func()
 }
@@ -56,10 +54,12 @@ func newPool(
 
 	p.runFunc = runFunc
 
-	p.containerStatusList = list.New()
+	p.containerPrepareNext = make(chan *bool)
 
-	// start revise container running count
-	go p.reviseContainerRunningCount()
+	// if GetNowRunningCount() < GetExpectRunningCount() then release a container
+	go p.reviseContainerRunningCountAsExpectCount()
+	// if GetNowRunningCount() > GetExpectRunningCount() then release a container
+	go p.reviseOverflowContainer()
 
 	return p, err
 }
@@ -118,83 +118,49 @@ func (p *pool) getNowRunningCount() uint64 {
 	return p.nowRunningCount
 }
 
-func (p *pool) newContainerStatus() *list.Element {
-	isBreak := new(bool)
-
-	containerStatus := p.pushNewContainerStatusInto(isBreak)
-
-	return containerStatus
+func (p *pool) newContainerBreaker() *bool {
+	return new(bool)
 }
 
-func (p *pool) pushNewContainerStatusInto(isBreak *bool) *list.Element {
-	defer p.containerStatusListMutex.Unlock()
-	p.containerStatusListMutex.Lock()
-	containerStatus := p.containerStatusList.PushBack(isBreak)
-
-	return containerStatus
-}
-
-var (
-	containerContainerStatusTypeError = errors.New("p.containerStatusList type error(require *bool)")
-)
-
-func (p *pool) containerStart(containerStatus *list.Element) {
-	defer p.containerEnd(containerStatus)
-	defer p.decrNowRunningCount()
-	defer p.reviseContainerRunningCountMutex.Unlock()
-
-	var isBreak *bool
-	switch v := containerStatus.Value.(type) {
-	case *bool:
-		isBreak = v
-	default:
-		err := containerContainerStatusTypeError
-		log.Println(err)
-		return
-	}
-
+func (p *pool) containerStart(containerBreaker *bool) {
 	p.incrNowRunningCount()
-	p.reviseContainerRunningCountMutex.Unlock()
+	defer p.decrNowRunningCount()
 
-	for *isBreak == false {
+	p.reviseContainerRunningCountAsExpectCountMutex.Unlock()
+
+	for *containerBreaker == false {
 		p.runFunc()
+		p.containerPrepareNextMutex.Lock()
+		p.containerPrepareNext <- containerBreaker
 	}
 
 	return
 }
-func (p *pool) containerEnd(containerStatus *list.Element) {
-	defer p.containerStatusListMutex.Unlock()
-	p.containerStatusListMutex.Lock()
-	p.containerStatusList.Remove(containerStatus)
-}
 
-func (p *pool) reviseContainerRunningCount() {
+func (p *pool) reviseContainerRunningCountAsExpectCount() {
 	for {
+		p.reviseContainerRunningCountAsExpectCountMutex.Lock()
 
-		p.reviseContainerRunningCountMutex.Lock() // this lock will release in p.container method
-
-		if p.GetExpectRunningCount() == p.GetNowRunningCount() {
-			p.reviseContainerRunningCountMutex.Unlock()
+		if p.GetNowRunningCount() == p.GetExpectRunningCount() || p.GetNowRunningCount() > p.GetExpectRunningCount() {
+			p.reviseContainerRunningCountAsExpectCountMutex.Unlock()
 			time.Sleep(p.GetDetectExpectDuration())
 			continue
 		}
 
-		if p.GetNowRunningCount() < p.GetExpectRunningCount() {
-			containerStatus := p.newContainerStatus()
-			go p.containerStart(containerStatus)
-		} else { // release a container
+		go p.containerStart(p.newContainerBreaker())
+	}
+}
 
-			var isBreak *bool
-			switch v := p.containerStatusList.Front().Value.(type) {
-			case *bool:
-				isBreak = v
-			default:
-				log.Fatal("p.containerStatusList find no *bool in list.List.Element. and I don't know why. Pool already will try stop all container. shutdown now.")
-				return
-			}
-			*isBreak = true
+func (p *pool) reviseOverflowContainer() {
+	for {
 
+		containerBreaker := <-p.containerPrepareNext
+
+		if p.GetNowRunningCount() > p.GetExpectRunningCount() {
+			*containerBreaker = true
 		}
+
+		p.containerPrepareNextMutex.Unlock()
 
 	}
 }
