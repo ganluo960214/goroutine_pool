@@ -56,9 +56,9 @@ func newPool(
 
 	p.containerPrepareNext = make(chan *bool)
 
-	// if GetNowRunningCount() < GetExpectRunningCount() then release a container
+	// if GetNowRunningCount() < GetExpectRunningCount() then create containers
 	go p.reviseContainerRunningCountAsExpectCount()
-	// if GetNowRunningCount() > GetExpectRunningCount() then release a container
+	// if GetNowRunningCount() > GetExpectRunningCount() then release containers
 	go p.reviseOverflowContainer()
 
 	return p, err
