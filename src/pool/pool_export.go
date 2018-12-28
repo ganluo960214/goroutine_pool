@@ -4,7 +4,7 @@ import "time"
 
 func NewPool(
 	expectRunningCount uint64,
-	runFunc func(),
+	runFunc func(uint64),
 ) (p *pool, err error) {
 	return newPool(expectRunningCount, runFunc)
 }

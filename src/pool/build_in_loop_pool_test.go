@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-func TestNewPool(t *testing.T) {
+func TestNewBuildInLoopPool(t *testing.T) {
 
 	var err error
 
-	_, err = NewPool(
+	_, err = NewBuildInLoopPool(
 		1,
-		func(containerIndex uint64) {
+		func(containerBreaker *bool, containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -21,21 +21,21 @@ func TestNewPool(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = NewPool(
+	_, err = NewBuildInLoopPool(
 		1,
 		nil,
 	)
-	if err != newPoolRunFuncIsNil {
+	if err != newBuildInLoopPoolRunFuncIsNil {
 		t.Fatal(err)
 	}
 
 }
 
-func TestPool_SetDetectExpectDuration(t *testing.T) {
+func TestBuildInLoopPool_SetDetectExpectDuration(t *testing.T) {
 	var err error
-	p, err := NewPool(
+	p, err := NewBuildInLoopPool(
 		1,
-		func(containerIndex uint64) {
+		func(containerBreaker *bool, containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -69,16 +69,16 @@ func TestPool_SetDetectExpectDuration(t *testing.T) {
 }
 
 var (
-	TestPoolGetDetectExpectDurationDefaultValueError           = errors.New("detect expect duration default value error(should be default value)")
-	TestPoolGetDetectExpectDurationShouldBePreviousSetDuration = errors.New("detect expect duration value should be previous set duration")
+	TestBuildInLoopPoolGetDetectExpectDurationDefaultValueError           = errors.New("detect expect duration default value error(should be default value)")
+	TestBuildInLoopPoolGetDetectExpectDurationShouldBePreviousSetDuration = errors.New("detect expect duration value should be previous set duration")
 )
 
-func TestPool_GetDetectExpectDuration(t *testing.T) {
+func TestBuildInLoopPool_GetDetectExpectDuration(t *testing.T) {
 
 	var err error
-	p, err := NewPool(
+	p, err := NewBuildInLoopPool(
 		1,
-		func(containerIndex uint64) {
+		func(containerBreaker *bool, containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -87,7 +87,7 @@ func TestPool_GetDetectExpectDuration(t *testing.T) {
 	}
 
 	if p.GetDetectExpectDuration() != defaultDetectExpectDuration {
-		t.Fatal(TestPoolGetDetectExpectDurationDefaultValueError)
+		t.Fatal(TestBuildInLoopPoolGetDetectExpectDurationDefaultValueError)
 	}
 
 	var detectExpectDuration time.Duration
@@ -108,20 +108,20 @@ func TestPool_GetDetectExpectDuration(t *testing.T) {
 
 	// GetDetectExpectDuration should be previous set(because previous set got error)
 	if p.GetDetectExpectDuration() != time.Second {
-		t.Fatal(TestPoolGetDetectExpectDurationShouldBePreviousSetDuration)
+		t.Fatal(TestBuildInLoopPoolGetDetectExpectDurationShouldBePreviousSetDuration)
 	}
 
 }
 
-func TestPool_SetExpectRunningCount(t *testing.T) {
+func TestBuildInLoopPool_SetExpectRunningCount(t *testing.T) {
 	var (
 		err                error
 		expectRunningCount uint64 = 1
 	)
 
-	p, err := NewPool(
+	p, err := NewBuildInLoopPool(
 		expectRunningCount,
-		func(containerIndex uint64) {
+		func(containerBreaker *bool, containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -138,18 +138,18 @@ func TestPool_SetExpectRunningCount(t *testing.T) {
 }
 
 var (
-	TestPoolGetExpectRunningCountNotMatchSetCountError = errors.New("expect running count not match the set count")
+	TestBuildInLoopPoolGetExpectRunningCountNotMatchSetCountError = errors.New("expect running count not match the set count")
 )
 
-func TestPool_GetExpectRunningCount(t *testing.T) {
+func TestBuildInLoopPool_GetExpectRunningCount(t *testing.T) {
 	var (
 		err                error
 		expectRunningCount uint64 = 1
 	)
 
-	p, err := NewPool(
+	p, err := NewBuildInLoopPool(
 		expectRunningCount,
-		func(containerIndex uint64) {
+		func(containerBreaker *bool, containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -163,17 +163,17 @@ func TestPool_GetExpectRunningCount(t *testing.T) {
 		t.Fatal(err)
 	}
 	if p.getExpectRunningCount() != expectRunningCount {
-		t.Fatal(TestPoolGetExpectRunningCountNotMatchSetCountError)
+		t.Fatal(TestBuildInLoopPoolGetExpectRunningCountNotMatchSetCountError)
 	}
 
 }
 
 var (
-	TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount = errors.New("expect running count not equal set expect running count")
-	TestPoolGetNowRunningCountNotEqualExpectRunningCount                = errors.New("running count not equal expect running count")
+	TestBuildInLoopPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount = errors.New("expect running count not equal set expect running count")
+	TestBuildInLoopPoolGetNowRunningCountNotEqualExpectRunningCount                = errors.New("running count not equal expect running count")
 )
 
-func TestPool_GetNowRunningCount(t *testing.T) {
+func TestBuildInLoopPool_GetNowRunningCount(t *testing.T) {
 	var (
 		i uint64 = 0
 	)
@@ -187,9 +187,9 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			wg.Add(1)
 		}
 
-		p, err := NewPool(
+		p, err := NewBuildInLoopPool(
 			expectRunningCount,
-			func(containerIndex uint64) {
+			func(containerBreaker *bool, containerIndex uint64) {
 
 				wg.Done()
 				time.Sleep(time.Hour)
@@ -203,10 +203,10 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 		wg.Wait()
 
 		if expectRunningCount != p.GetExpectRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		if expectRunningCount != p.GetNowRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountNotEqualExpectRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountNotEqualExpectRunningCount)
 		}
 
 	}
@@ -221,9 +221,9 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			wg.Add(1)
 		}
 
-		p, err := NewPool(
+		p, err := NewBuildInLoopPool(
 			expectRunningCount,
-			func(containerIndex uint64) {
+			func(containerBreaker *bool, containerIndex uint64) {
 
 				wg.Done()
 				time.Sleep(time.Hour)
@@ -237,10 +237,10 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 		wg.Wait()
 
 		if expectRunningCount != p.GetExpectRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		if expectRunningCount != p.GetNowRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountNotEqualExpectRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountNotEqualExpectRunningCount)
 		}
 
 		//
@@ -256,10 +256,10 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 		wg.Wait()
 
 		if expectRunningCount != p.GetExpectRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		if expectRunningCount != p.GetNowRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountNotEqualExpectRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountNotEqualExpectRunningCount)
 		}
 
 	}
@@ -269,9 +269,9 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			expectRunningCount uint64 = 100
 		)
 
-		p, err := NewPool(
+		p, err := NewBuildInLoopPool(
 			expectRunningCount,
-			func(containerIndex uint64) {
+			func(containerBreaker *bool, containerIndex uint64) {
 
 				time.Sleep(time.Millisecond)
 
@@ -283,7 +283,7 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 
 		//
 		if expectRunningCount != p.GetExpectRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		for p.GetNowRunningCount() != p.GetExpectRunningCount() {
 			time.Sleep(time.Millisecond)
@@ -296,7 +296,7 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			t.Fatal(err)
 		}
 		if expectRunningCount != p.GetExpectRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		for p.GetNowRunningCount() != p.GetExpectRunningCount() {
 			time.Sleep(time.Millisecond)
@@ -309,7 +309,7 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 			t.Fatal(err)
 		}
 		if expectRunningCount != p.GetExpectRunningCount() {
-			t.Fatal(TestPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
+			t.Fatal(TestBuildInLoopPoolGetNowRunningCountExpectRunningCountNotEqualSetRunningCount)
 		}
 		for p.GetNowRunningCount() != p.GetExpectRunningCount() {
 			time.Sleep(time.Millisecond)

@@ -1,6 +1,7 @@
 package pool_manager
 
-import ()
+import "github.com/GanLuo96214/goroutine_pool/src/pool"
 
-type GoroutinePoolManager struct {
+type PoolManager interface {
+	PoolManager() *pool.Status
 }

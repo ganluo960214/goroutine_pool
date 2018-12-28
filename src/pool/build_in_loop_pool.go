@@ -6,24 +6,27 @@ import (
 	"time"
 )
 
-type pool struct {
+type buildInLoopPool struct {
 	*Status
+
+	containerPrepareNext      chan *bool
+	containerPrepareNextMutex sync.Mutex
 
 	reviseContainerRunningCountAsExpectCountMutex sync.Mutex
 
-	runFunc func(containerIndex uint64)
+	runFunc func(containerBreaker *bool, containerIndex uint64)
 }
 
 var (
-	newPoolRunFuncIsNil = errors.New("func is nil,the pool would not start")
+	newBuildInLoopPoolRunFuncIsNil = errors.New("func is nil,the pool would not start")
 )
 
-func newPool(
+func newBuildInLoopPool(
 	expectRunningCount uint64,
-	runFunc func(uint64),
-) (p *pool, err error) {
+	runFunc func(*bool, uint64),
+) (p *buildInLoopPool, err error) {
 
-	p = new(pool)
+	p = new(buildInLoopPool)
 	p.Status = new(Status)
 
 	// set default revise  running count
@@ -39,31 +42,38 @@ func newPool(
 	}
 
 	if runFunc == nil {
-		err = newPoolRunFuncIsNil
+		err = newBuildInLoopPoolRunFuncIsNil
 		return nil, err
 	}
 
 	p.runFunc = runFunc
 
+	p.containerPrepareNext = make(chan *bool)
+
 	// if GetNowRunningCount() < GetExpectRunningCount() then create containers
 	go p.reviseContainerRunningCountAsExpectCount()
 	// if GetNowRunningCount() > GetExpectRunningCount() then release containers
+	go p.reviseOverflowContainer()
 
 	return p, err
 }
 
-func (p *pool) containerStart(containerIndex uint64) {
+func (p *buildInLoopPool) containerStart(containerBreaker *bool, containerIndex uint64) {
 	p.incrNowRunningCount()
 	defer p.decrNowRunningCount()
 
 	p.reviseContainerRunningCountAsExpectCountMutex.Unlock()
 
-	p.runFunc(containerIndex)
+	for *containerBreaker == false {
+		p.runFunc(containerBreaker, containerIndex)
+		p.containerPrepareNextMutex.Lock()
+		p.containerPrepareNext <- containerBreaker
+	}
 
 	return
 }
 
-func (p *pool) reviseContainerRunningCountAsExpectCount() {
+func (p *buildInLoopPool) reviseContainerRunningCountAsExpectCount() {
 	for {
 		p.reviseContainerRunningCountAsExpectCountMutex.Lock()
 
@@ -73,6 +83,20 @@ func (p *pool) reviseContainerRunningCountAsExpectCount() {
 			continue
 		}
 
-		go p.containerStart(p.newContainerIndex())
+		go p.containerStart(p.newContainerBreaker(), p.newContainerIndex())
+	}
+}
+
+func (p *buildInLoopPool) reviseOverflowContainer() {
+	for {
+
+		containerBreaker := <-p.containerPrepareNext
+
+		if p.GetNowRunningCount() > p.GetExpectRunningCount() {
+			*containerBreaker = true
+		}
+
+		p.containerPrepareNextMutex.Unlock()
+
 	}
 }
