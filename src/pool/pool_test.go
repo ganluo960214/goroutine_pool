@@ -162,7 +162,7 @@ func TestPool_GetExpectRunningCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.getExpectRunningCount() != expectRunningCount {
+	if p.GetExpectRunningCount() != expectRunningCount {
 		t.Fatal(TestPoolGetExpectRunningCountNotMatchSetCountError)
 	}
 
@@ -245,7 +245,7 @@ func TestPool_GetNowRunningCount(t *testing.T) {
 
 		//
 		expectRunningCount = 150
-		for i = 0; i < expectRunningCount-p.getNowRunningCount(); i++ {
+		for i = 0; i < expectRunningCount-p.GetNowRunningCount(); i++ {
 			wg.Add(1)
 		}
 

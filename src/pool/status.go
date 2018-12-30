@@ -24,7 +24,7 @@ var (
 	setExpectRunningCountMinCountError = errors.New("set count need >= 0") // count must >= 0
 )
 
-func (s *Status) setExpectRunningCount(count uint64) (err error) {
+func (s *Status) SetExpectRunningCount(count uint64) (err error) {
 	if count < 0 {
 		err = setExpectRunningCountMinCountError
 		return err
@@ -34,7 +34,7 @@ func (s *Status) setExpectRunningCount(count uint64) (err error) {
 
 	return nil
 }
-func (s *Status) getExpectRunningCount() uint64 {
+func (s *Status) GetExpectRunningCount() uint64 {
 	return s.expectRunningCount
 }
 
@@ -42,7 +42,7 @@ var (
 	setDetectExpectDurationMinDurationError = errors.New("min duration is millisecond") // min duration is millisecond because of cpu resource
 )
 
-func (s *Status) setDetectExpectDuration(duration time.Duration) (err error) {
+func (s *Status) SetDetectExpectDuration(duration time.Duration) (err error) {
 	if duration < time.Millisecond {
 		err = setDetectExpectDurationMinDurationError
 		return
@@ -52,7 +52,7 @@ func (s *Status) setDetectExpectDuration(duration time.Duration) (err error) {
 
 	return
 }
-func (s *Status) getDetectExpectDuration() time.Duration {
+func (s *Status) GetDetectExpectDuration() time.Duration {
 	return s.detectExpectDuration
 }
 
@@ -68,7 +68,7 @@ func (s *Status) decrNowRunningCount() {
 
 	s.nowRunningCount--
 }
-func (s *Status) getNowRunningCount() uint64 {
+func (s *Status) GetNowRunningCount() uint64 {
 	s.nowRunningCountMutex.Lock()
 	defer s.nowRunningCountMutex.Unlock()
 	return s.nowRunningCount

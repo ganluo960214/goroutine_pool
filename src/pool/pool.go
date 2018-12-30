@@ -27,13 +27,13 @@ func newPool(
 	p.Status = new(Status)
 
 	// set default revise  running count
-	err = p.setDetectExpectDuration(defaultDetectExpectDuration)
+	err = p.SetDetectExpectDuration(defaultDetectExpectDuration)
 	if err != nil {
 		return nil, err
 	}
 
 	// set expect running  count
-	err = p.setExpectRunningCount(expectRunningCount)
+	err = p.SetExpectRunningCount(expectRunningCount)
 	if err != nil {
 		return nil, err
 	}
