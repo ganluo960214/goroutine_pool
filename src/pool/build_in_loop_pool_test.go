@@ -13,7 +13,7 @@ func TestNewBuildInLoopPool(t *testing.T) {
 
 	_, err = NewBuildInLoopPool(
 		1,
-		func(containerBreaker *bool, containerIndex uint64) {
+		func(containerEnd func(), containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -35,7 +35,7 @@ func TestBuildInLoopPool_SetDetectExpectDuration(t *testing.T) {
 	var err error
 	p, err := NewBuildInLoopPool(
 		1,
-		func(containerBreaker *bool, containerIndex uint64) {
+		func(containerEnd func(), containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -78,7 +78,7 @@ func TestBuildInLoopPool_GetDetectExpectDuration(t *testing.T) {
 	var err error
 	p, err := NewBuildInLoopPool(
 		1,
-		func(containerBreaker *bool, containerIndex uint64) {
+		func(containerEnd func(), containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -121,7 +121,7 @@ func TestBuildInLoopPool_SetExpectRunningCount(t *testing.T) {
 
 	p, err := NewBuildInLoopPool(
 		expectRunningCount,
-		func(containerBreaker *bool, containerIndex uint64) {
+		func(containerEnd func(), containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -149,7 +149,7 @@ func TestBuildInLoopPool_GetExpectRunningCount(t *testing.T) {
 
 	p, err := NewBuildInLoopPool(
 		expectRunningCount,
-		func(containerBreaker *bool, containerIndex uint64) {
+		func(containerEnd func(), containerIndex uint64) {
 			time.Sleep(time.Second)
 		},
 	)
@@ -189,7 +189,7 @@ func TestBuildInLoopPool_GetNowRunningCount(t *testing.T) {
 
 		p, err := NewBuildInLoopPool(
 			expectRunningCount,
-			func(containerBreaker *bool, containerIndex uint64) {
+			func(containerEnd func(), containerIndex uint64) {
 
 				wg.Done()
 				time.Sleep(time.Hour)
@@ -223,7 +223,7 @@ func TestBuildInLoopPool_GetNowRunningCount(t *testing.T) {
 
 		p, err := NewBuildInLoopPool(
 			expectRunningCount,
-			func(containerBreaker *bool, containerIndex uint64) {
+			func(containerEnd func(), containerIndex uint64) {
 
 				wg.Done()
 				time.Sleep(time.Hour)
@@ -271,7 +271,7 @@ func TestBuildInLoopPool_GetNowRunningCount(t *testing.T) {
 
 		p, err := NewBuildInLoopPool(
 			expectRunningCount,
-			func(containerBreaker *bool, containerIndex uint64) {
+			func(containerEnd func(), containerIndex uint64) {
 
 				time.Sleep(time.Millisecond)
 

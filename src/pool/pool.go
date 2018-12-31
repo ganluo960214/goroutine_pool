@@ -20,7 +20,7 @@ var (
 
 func newPool(
 	expectRunningCount uint64,
-	runFunc func(uint64),
+	runFunc func(containerIndex uint64),
 ) (p *pool, err error) {
 
 	p = new(pool)
@@ -47,7 +47,6 @@ func newPool(
 
 	// if GetNowRunningCount() < GetExpectRunningCount() then create containers
 	go p.reviseContainerRunningCountAsExpectCount()
-	// if GetNowRunningCount() > GetExpectRunningCount() then release containers
 
 	return p, err
 }

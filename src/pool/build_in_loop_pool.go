@@ -14,7 +14,7 @@ type buildInLoopPool struct {
 
 	reviseContainerRunningCountAsExpectCountMutex sync.Mutex
 
-	runFunc func(containerBreaker *bool, containerIndex uint64)
+	runFunc func(containerEnd func(), containerIndex uint64)
 }
 
 var (
@@ -23,7 +23,7 @@ var (
 
 func newBuildInLoopPool(
 	expectRunningCount uint64,
-	runFunc func(*bool, uint64),
+	runFunc func(containerEnd func(), containerIndex uint64),
 ) (p *buildInLoopPool, err error) {
 
 	p = new(buildInLoopPool)
@@ -64,8 +64,12 @@ func (p *buildInLoopPool) containerStart(containerBreaker *bool, containerIndex 
 
 	p.reviseContainerRunningCountAsExpectCountMutex.Unlock()
 
+	containerEnd := func() {
+		*containerBreaker = true
+	}
+
 	for *containerBreaker == false {
-		p.runFunc(containerBreaker, containerIndex)
+		p.runFunc(containerEnd, containerIndex)
 		p.containerPrepareNextMutex.Lock()
 		p.containerPrepareNext <- containerBreaker
 	}
