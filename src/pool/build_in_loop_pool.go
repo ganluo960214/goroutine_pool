@@ -9,8 +9,7 @@ import (
 type buildInLoopPool struct {
 	*Status
 
-	containerPrepareNext      chan *bool
-	containerPrepareNextMutex sync.Mutex
+	containerPrepareNext chan *bool
 
 	reviseContainerRunningCountAsExpectCountMutex sync.Mutex
 
@@ -70,7 +69,6 @@ func (p *buildInLoopPool) containerStart(containerBreaker *bool, containerIndex 
 
 	for *containerBreaker == false {
 		p.runFunc(containerEnd, containerIndex)
-		p.containerPrepareNextMutex.Lock()
 		p.containerPrepareNext <- containerBreaker
 	}
 
@@ -99,8 +97,6 @@ func (p *buildInLoopPool) reviseOverflowContainer() {
 		if p.GetNowRunningCount() > p.GetExpectRunningCount() {
 			*containerBreaker = true
 		}
-
-		p.containerPrepareNextMutex.Unlock()
 
 	}
 }
